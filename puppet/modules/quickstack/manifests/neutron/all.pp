@@ -28,6 +28,7 @@ class quickstack::neutron::all (
   $nexus_credentials             = '',
   $ovs_bridge_mappings           = [],
   $ovs_bridge_uplinks            = [],
+  $ovs_tunnel_iface_mac          = '',
   $ovs_tunnel_iface              = '',
   $ovs_tunnel_network            = '',
   $ovs_vlan_ranges               = '',
@@ -146,7 +147,13 @@ class quickstack::neutron::all (
     neutron_admin_auth_url => "http://${auth_host}:35357/v2.0",
   }
 
-  $local_ip = find_ip("$ovs_tunnel_network","$ovs_tunnel_iface","")
+  if ($ovs_tunnel_iface_mac) {
+    $iface = find_interface_with('macaddress', $ovs_tunnel_iface_mac)
+  } else {
+    $iface = $ovs_tunnel_iface
+  }
+
+  $local_ip = find_ip("$ovs_tunnel_network","$iface","")
 
   class { '::neutron::agents::ovs':
     bridge_uplinks   => $ovs_bridge_uplinks,

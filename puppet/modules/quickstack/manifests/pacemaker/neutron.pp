@@ -13,6 +13,7 @@ class quickstack::pacemaker::neutron (
   $ml2_vxlan_group            = '224.0.0.1',
   $ovs_bridge_mappings        = [],
   $ovs_bridge_uplinks         = [],
+  $ovs_tunnel_iface_mac       = '',
   $ovs_tunnel_iface           = '',
   $ovs_tunnel_network         = '',
   $ovs_vxlan_udp_port         = '4789',
@@ -27,7 +28,14 @@ class quickstack::pacemaker::neutron (
   if (map_params('include_neutron') == 'true') {
     $neutron_group = map_params("neutron_group")
     $neutron_public_vip = map_params("neutron_public_vip")
-    $ovs_nic = find_nic("$ovs_tunnel_network","$ovs_tunnel_iface","")
+
+    if ($ovs_tunnel_iface_mac) {
+      $iface = find_interface_with('macaddress', $ovs_tunnel_iface_mac)
+    } else {
+      $iface = $ovs_tunnel_iface
+    }
+
+    $ovs_nic = find_nic("$ovs_tunnel_network","$iface","")
 
     if (map_params('include_mysql') == 'true') {
       Exec['all-galera-nodes-are-up'] -> Exec['i-am-neutron-vip-OR-neutron-is-up-on-vip']
@@ -68,6 +76,7 @@ class quickstack::pacemaker::neutron (
       timeout   => 3600,
       tries     => 360,
       try_sleep => 10,
+
       command   => "/tmp/ha-all-in-one-util.bash i_am_vip $neutron_public_vip || /tmp/ha-all-in-one-util.bash property_exists neutron",
       unless   => "/tmp/ha-all-in-one-util.bash i_am_vip $neutron_public_vip || /tmp/ha-all-in-one-util.bash property_exists neutron",
     }

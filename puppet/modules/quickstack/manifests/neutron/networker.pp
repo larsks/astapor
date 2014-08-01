@@ -7,6 +7,7 @@ class quickstack::neutron::networker (
   $nova_db_password              = $quickstack::params::nova_db_password,
   $nova_user_password            = $quickstack::params::nova_user_password,
   $controller_priv_host          = $quickstack::params::controller_priv_host,
+  $ovs_tunnel_iface_mac          = '',
   $ovs_tunnel_iface              = 'eth1',
   $ovs_tunnel_network            = '',
   $ovs_l2_population             = 'True',
@@ -73,7 +74,13 @@ class quickstack::neutron::networker (
 
   neutron_plugin_ovs { 'AGENT/l2_population': value => "$ovs_l2_population"; }
 
-  $local_ip = find_ip("$ovs_tunnel_network","$ovs_tunnel_iface","")
+  if ($ovs_tunnel_iface_mac) {
+    $iface = find_interface_with('macaddress', $ovs_tunnel_iface_mac)
+  } else {
+    $iface = $ovs_tunnel_iface
+  }
+
+  $local_ip = find_ip("$ovs_tunnel_network","$iface","")
 
   class { '::neutron::agents::ovs':
     bridge_uplinks   => $ovs_bridge_uplinks,

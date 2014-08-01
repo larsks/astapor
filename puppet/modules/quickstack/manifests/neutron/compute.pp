@@ -20,6 +20,7 @@ class quickstack::neutron::compute (
   $ovs_bridge_mappings          = $quickstack::params::ovs_bridge_mappings,
   $ovs_bridge_uplinks           = $quickstack::params::ovs_bridge_uplinks,
   $ovs_vlan_ranges              = $quickstack::params::ovs_vlan_ranges,
+  $ovs_tunnel_iface_mac         = '',
   $ovs_tunnel_iface             = 'eth1',
   $ovs_tunnel_network           = '',
   $ovs_l2_population            = 'True',
@@ -96,7 +97,14 @@ class quickstack::neutron::compute (
 
   neutron_plugin_ovs { 'AGENT/l2_population': value => "$ovs_l2_population"; }
 
-  $local_ip = find_ip("$ovs_tunnel_network","$ovs_tunnel_iface","")
+  if ($ovs_tunnel_iface_mac) {
+    $iface = find_interface_with('macaddress', $ovs_tunnel_iface_mac)
+  } else {
+    $iface = $ovs_tunnel_iface
+  }
+
+  $local_ip = find_ip("$ovs_tunnel_network","$iface","")
+
   class { '::neutron::agents::ovs':
     bridge_uplinks   => $ovs_bridge_uplinks,
     bridge_mappings  => $ovs_bridge_mappings,
